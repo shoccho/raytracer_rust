@@ -1,33 +1,34 @@
+#![allow(dead_code)]
 extern crate sdl2;
 
 mod ray;
 mod vec3;
 
-use ray::ray::Ray;
+use ray::Ray;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::rect::Point;
-use vec3::vec3::Vec3;
+use vec3::Vec3;
 
 use std::time::Duration;
 
-const image_height: usize = 256;
-const image_width: usize = 256;
+const IMAGE_HEIGHT: usize = 256;
+const IMAGE_WIDTH: usize = 256;
 
 fn print_head() {
     println!("P3");
-    println!("{image_height} {image_width}");
+    println!("{IMAGE_HEIGHT} {IMAGE_WIDTH}");
     println!("255")
 }
 
-fn print_image(buffData: &mut Vec<Vec<Vec3>>) {
-    for j in 0..image_height {
-        eprintln!("Lines remaining {}", image_height - j);
-        for i in 0..image_width {
-            let ir = (255.999 * buffData[j][i].x) as isize;
-            let ig = (255.999 * buffData[j][i].y) as isize;
-            let ib = (255.999 * buffData[j][i].z) as isize;
+fn print_image(buff_data: &mut [Vec<Vec3>]) {
+    for (j, row) in buff_data.iter().enumerate() {
+        eprintln!("Lines remaining {}", IMAGE_HEIGHT - j);
+        for data in row.iter(){
+            let ir = (255.999 * data.x) as isize;
+            let ig = (255.999 * data.y) as isize;
+            let ib = (255.999 * data.z) as isize;
             println!("{ir} {ig} {ib}");
         }
     }
@@ -63,13 +64,13 @@ fn ray_color(ray: &Ray) -> Vec3 {
 fn main() {
     // print_head();
     
-    let mut buffData = vec![vec![Vec3::default(); image_width]; image_height];
+    let mut buff_data = vec![vec![Vec3::default(); IMAGE_WIDTH]; IMAGE_HEIGHT];
 
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
     let window = video_subsystem
-        .window("rust-sdl2 demo", image_width as u32, image_width as u32)
+        .window("rust-sdl2 demo", IMAGE_WIDTH as u32, IMAGE_WIDTH as u32)
         .position_centered()
         .build()
         .unwrap();
@@ -83,7 +84,7 @@ fn main() {
         y: 0f64,
         z: 0f64,
     };
-    let viewport_width = viewport_height * ((image_width) as f64 / image_height as f64);
+    let viewport_width = viewport_height * ((IMAGE_WIDTH) as f64 / IMAGE_HEIGHT as f64);
     let viewport_u = Vec3 {
         x: viewport_width,
         y: 0f64,
@@ -95,8 +96,8 @@ fn main() {
         z: 0f64,
     };
 
-    let pixel_delta_u = Vec3::div(&viewport_u, image_width as f64);
-    let pixel_delta_v = Vec3::div(&viewport_v, image_height as f64);
+    let pixel_delta_u = Vec3::div(&viewport_u, IMAGE_WIDTH as f64);
+    let pixel_delta_v = Vec3::div(&viewport_v, IMAGE_HEIGHT as f64);
 
     let viewport_upper_left = Vec3::sub(
         &camera_center,
@@ -114,8 +115,8 @@ fn main() {
         &Vec3::mul(&Vec3::add(&pixel_delta_u, &pixel_delta_v), 0.5),
     );
 
-    for j in 0..image_height {
-        for i in 0..image_width {
+    for (j, row) in buff_data.iter_mut().enumerate() {
+        for (i, data) in row.iter_mut().enumerate(){
             let pixel_center = Vec3::add(
                 &pixel00_loc,
                 &Vec3::add(
@@ -128,12 +129,15 @@ fn main() {
                 origin: camera_center.clone(),
                 direction: ray_direction.clone(),
             };
-            let pixel_color = ray_color(&ray);
-            buffData[j][i] = pixel_color;
+            let ray_color = ray_color(&ray);
+            data.x = ray_color.x;
+            data.y = ray_color.y;
+            data.z = ray_color.z;
+            
         }
     }
 
-    // print_image(&mut buffData);
+    // print_image(&mut buff_data);
 
     canvas.set_draw_color(Color::RGB(0, 0, 0));
     canvas.clear();
@@ -152,12 +156,12 @@ fn main() {
                 _ => {}
             }
         }
-        for j in 0..image_height {
-            for i in 0..image_width {
+        for (j, row) in buff_data.iter().enumerate() {
+            for (i, data) in row.iter().enumerate(){
                 canvas.set_draw_color(Color::RGB(
-                    (255.999 * buffData[j][i].x) as u8,
-                    (255.999 * buffData[j][i].y) as u8,
-                    (255.999 * buffData[j][i].z) as u8,
+                    (255.999 * data.x) as u8,
+                    (255.999 * data.y) as u8,
+                    (255.999 * data.z) as u8,
                 ));
                 let _ = canvas.draw_point(Point::new(i as i32, j as i32));
             }
