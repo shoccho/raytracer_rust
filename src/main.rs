@@ -14,7 +14,7 @@ use vec3::Vec3;
 use std::time::Duration;
 
 const ASPECT_RATIO: f64 = 16.0 / 9.0;
-const IMAGE_WIDTH: usize = 400;
+const IMAGE_WIDTH: usize = 900;
 const IMAGE_HEIGHT: usize = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as usize;
 
 fn print_head() {
@@ -35,19 +35,26 @@ fn print_image(buff_data: &mut [Vec<Vec3>]) {
     }
 }
 
-fn hit_sphere(center: &Vec3, radius: f64, ray: &Ray) -> bool {
+fn hit_sphere(center: &Vec3, radius: f64, ray: &Ray) -> f64 {
     let oc = Vec3::sub(center, &ray.origin);
     let a = Vec3::dot(&ray.direction, &ray.direction);
     let b = -2.0 * Vec3::dot(&ray.direction, &oc);
     let c = Vec3::dot(&oc, &oc) - (radius * radius);
     let d = (b * b) - (4.0 * a * c);
-    d >= 0.0
+    if d < 0.0 {
+        return -1.0;
+    } else {
+        return (-b - d.sqrt() ) / (2.0*a);
+    }
 }
 
 fn ray_color(ray: &Ray) -> Vec3 {
-    if hit_sphere(&Vec3::new(0.0, 0.0, -1.0), 0.5, ray) {
-        return Vec3::new(1.0, 0.0, 0.0);
+    let hit = hit_sphere(&Vec3::new(0.0, 0.0, -1.0), 0.5, &ray);
+    if hit > 0.0 {
+        let n = Vec3::sub(&ray.at(hit), &Vec3::new(0.0,0.0,-1.0));
+        return Vec3::mul(&Vec3::add(&n, &Vec3::new(1.0, 1.0, 1.0)), 0.5)
     }
+    
 
     let unit_dir = Vec3::unit(&ray.direction);
 
