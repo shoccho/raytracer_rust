@@ -37,14 +37,14 @@ fn print_image(buff_data: &mut [Vec<Vec3>]) {
 
 fn hit_sphere(center: &Vec3, radius: f64, ray: &Ray) -> f64 {
     let oc = Vec3::sub(center, &ray.origin);
-    let a = Vec3::dot(&ray.direction, &ray.direction);
-    let b = -2.0 * Vec3::dot(&ray.direction, &oc);
-    let c = Vec3::dot(&oc, &oc) - (radius * radius);
-    let d = (b * b) - (4.0 * a * c);
+    let a = ray.direction.length_squared();
+    let h = Vec3::dot(&ray.direction, &oc);
+    let c = oc.length_squared() - radius*radius;
+    let d = h*h - a*c;
     if d < 0.0 {
         return -1.0;
     } else {
-        return (-b - d.sqrt() ) / (2.0*a);
+        return (h-d.sqrt()) / a;
     }
 }
 
