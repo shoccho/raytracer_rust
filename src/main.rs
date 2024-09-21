@@ -1,14 +1,20 @@
 #![allow(dead_code)]
 extern crate sdl2;
 
+mod hit_record;
+mod hittable_list;
 mod ray;
+mod sphere;
 mod vec3;
 
+use hit_record::HitRecord;
+use hittable_list::HittableList;
 use ray::Ray;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::rect::Point;
+use sphere::Sphere;
 use vec3::Vec3;
 
 use std::time::Duration;
@@ -39,22 +45,23 @@ fn hit_sphere(center: &Vec3, radius: f64, ray: &Ray) -> f64 {
     let oc = Vec3::sub(center, &ray.origin);
     let a = ray.direction.length_squared();
     let h = Vec3::dot(&ray.direction, &oc);
-    let c = oc.length_squared() - radius*radius;
-    let d = h*h - a*c;
+    let c = oc.length_squared() - radius * radius;
+    let d = h * h - a * c;
     if d < 0.0 {
-        return -1.0;
+        -1.0
     } else {
-        return (h-d.sqrt()) / a;
+        (h - d.sqrt()) / a
     }
 }
 
-fn ray_color(ray: &Ray) -> Vec3 {
-    let hit = hit_sphere(&Vec3::new(0.0, 0.0, -1.0), 0.5, &ray);
-    if hit > 0.0 {
-        let n = Vec3::sub(&ray.at(hit), &Vec3::new(0.0,0.0,-1.0));
-        return Vec3::mul(&Vec3::add(&n, &Vec3::new(1.0, 1.0, 1.0)), 0.5)
+fn ray_color(ray: &Ray, world: &HittableList) -> Vec3 {
+    let mut hit_record = HitRecord::new();
+    if world.hit(ray, 0.0, f64::INFINITY, &mut hit_record) {
+        return Vec3::mul(
+            &Vec3::add(&hit_record.normal, &Vec3::new(1.0, 1.0, 1.0)),
+            0.5,
+        );
     }
-    
 
     let unit_dir = Vec3::unit(&ray.direction);
 
@@ -68,7 +75,10 @@ fn ray_color(ray: &Ray) -> Vec3 {
 
 fn main() {
     // print_head();
+    let mut world = HittableList::new();
 
+    world.add(Box::new(Sphere::new(&Vec3::new(0.0, 0.0, -1.0), 0.5)));
+    world.add(Box::new(Sphere::new(&Vec3::new(0.0, -101.0, -1.0), 100.0)));
     let mut buff_data = vec![vec![Vec3::default(); IMAGE_WIDTH]; IMAGE_HEIGHT];
 
     let sdl_context = sdl2::init().unwrap();
@@ -116,7 +126,7 @@ fn main() {
                 origin: camera_center.clone(),
                 direction: ray_direction.clone(),
             };
-            let color = ray_color(&ray);
+            let color = ray_color(&ray, &world);
             data.x = color.x;
             data.y = color.y;
             data.z = color.z;
