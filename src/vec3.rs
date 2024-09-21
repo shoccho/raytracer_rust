@@ -32,7 +32,7 @@ pub mod vec3 {
             self.length_squared().sqrt()
         }
 
-        pub fn add(lhs: Vec3, rhs: Vec3) -> Vec3 {
+        pub fn add(lhs: &Vec3, rhs: &Vec3) -> Vec3 {
             Self {
                 x: lhs.x + rhs.x,
                 y: lhs.y + rhs.y,
@@ -40,7 +40,7 @@ pub mod vec3 {
             }
         }
 
-        pub fn sub(lhs: Vec3, rhs: Vec3) -> Vec3 {
+        pub fn sub(lhs: &Vec3, rhs: &Vec3) -> Vec3 {
             Self {
                 x: lhs.x - rhs.x,
                 y: lhs.y - rhs.y,
@@ -48,7 +48,7 @@ pub mod vec3 {
             }
         }
 
-        pub fn mul(lhs: Vec3, rhs: f64) -> Vec3 {
+        pub fn mul(lhs: &Vec3, rhs: f64) -> Vec3 {
             
             Self {
                 x: lhs.x * rhs,
@@ -57,7 +57,7 @@ pub mod vec3 {
             }
         }
 
-        pub fn mulV(lhs: Vec3, rhs: Vec3) -> Vec3 {
+        pub fn mulV(lhs: &Vec3, rhs: &Vec3) -> Vec3 {
             Self {
                 x: lhs.x * rhs.x,
                 y: lhs.y * rhs.y,
@@ -65,15 +65,15 @@ pub mod vec3 {
             }
         }
 
-        pub fn div(lhs: Vec3, rhs: f64) -> Vec3 {
+        pub fn div(lhs: &Vec3, rhs: f64) -> Vec3 {
             Self::mul(lhs, 1f64 / rhs)
         }
 
-        pub fn dot(lhs: Vec3, rhs: Vec3) -> f64 {
+        pub fn dot(lhs: &Vec3, rhs: &Vec3) -> f64 {
             lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z
         }
 
-        pub fn cross(lhs: Vec3, rhs: Vec3) -> Vec3{
+        pub fn cross(lhs: &Vec3, rhs: &Vec3) -> Vec3{
             Vec3{
                 x: lhs.y * rhs.z - lhs.z * rhs.y,
                 y: lhs.z * rhs.x - lhs.x * rhs.z,
@@ -81,9 +81,8 @@ pub mod vec3 {
             }
         }
 
-        pub fn unit(lhs: Vec3) -> Vec3 {
-            let len = lhs.length();
-            Self::div(lhs, len)
+        pub fn unit(lhs: &Vec3) -> Vec3 {
+            Self::div(lhs, lhs.length())
         }
     }
 }
