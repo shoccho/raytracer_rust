@@ -27,16 +27,17 @@ impl Hittable for Sphere {
         let oc = Vec3::sub(&self.center, &ray.origin);
         let a = ray.direction.length_squared();
         let h = Vec3::dot(&ray.direction, &oc);
-        let c = oc.length_squared() - self.radius * self.radius;
-        let d = h * h - a * c;
+        let c = oc.length_squared() - (self.radius * self.radius);
+        let d = (h * h) - (a * c);
         if d < 0.0 {
             return false;
         }
-        let sqrtd = (h - d.sqrt()) / a;
+
+        let sqrtd = d.sqrt();
         let mut root = (h - sqrtd) / a;
-        if ray_t_min >= root || ray_t_max <= root {
+        if root <= ray_t_min || ray_t_max <= root {
             root = (h + sqrtd) / a;
-            if ray_t_min >= root || ray_t_max <= root {
+            if root <= ray_t_min || ray_t_max <= root {
                 return false;
             }
         }
