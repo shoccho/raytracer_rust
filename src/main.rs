@@ -7,11 +7,10 @@ mod interval;
 mod ray;
 mod sphere;
 mod vec3;
+mod camera;
 
-use hit_record::HitRecord;
+use camera::Camera;
 use hittable_list::HittableList;
-use interval::Interval;
-use ray::Ray;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
@@ -44,41 +43,6 @@ fn print_image(buff_data: &mut [Vec<Vec3>]) {
     }
 }
 
-fn hit_sphere(center: &Vec3, radius: f64, ray: &Ray) -> f64 {
-    let oc = Vec3::sub(center, &ray.origin);
-    let a = ray.direction.length_squared();
-    let h = Vec3::dot(&ray.direction, &oc);
-    let c = oc.length_squared() - radius * radius;
-    let d = h * h - a * c;
-    if d < 0.0 {
-        -1.0
-    } else {
-        (h - d.sqrt()) / a
-    }
-}
-
-fn ray_color(ray: &Ray, world: &HittableList) -> Vec3 {
-    let mut hit_record = HitRecord::new();
-    if world.hit(
-        ray,
-        &Interval::new_with_values(0.0, f64::INFINITY),
-        &mut hit_record,
-    ) {
-        return Vec3::mul(
-            &Vec3::add(&hit_record.normal, &Vec3::new(1.0, 1.0, 1.0)),
-            0.5,
-        );
-    }
-
-    let unit_dir = Vec3::unit(&ray.direction);
-
-    let a = 0.5 * (unit_dir.y + 1.0);
-
-    Vec3::add(
-        &Vec3::mul(&Vec3::new(1.0, 1.0, 1.0), 1.0 - a),
-        &Vec3::mul(&Vec3::new(0.5, 0.7, 1.0), a),
-    )
-}
 
 fn main() {
     // print_head();
@@ -98,49 +62,8 @@ fn main() {
         .unwrap();
 
     let mut canvas = window.into_canvas().build().unwrap();
-
-    let focal_length = 1.0;
-    let viewport_height = 2.0;
-    let camera_center = Vec3::new(0f64, 0f64, 0f64);
-    let viewport_width = viewport_height * ((IMAGE_WIDTH) as f64 / IMAGE_HEIGHT as f64);
-    let viewport_u = Vec3::new(viewport_width, 0f64, 0f64);
-    let viewport_v = Vec3::new(0f64, -viewport_height, 0f64);
-
-    let pixel_delta_u = Vec3::div(&viewport_u, IMAGE_WIDTH as f64);
-    let pixel_delta_v = Vec3::div(&viewport_v, IMAGE_HEIGHT as f64);
-
-    let viewport_upper_left = Vec3::sub(
-        &Vec3::sub(&camera_center, &Vec3::new(0.0, 0.0, focal_length)),
-        &Vec3::add(&Vec3::div(&viewport_u, 2.0), &Vec3::div(&viewport_v, 2.0)),
-    );
-
-    let pixel00_loc = Vec3::add(
-        &viewport_upper_left,
-        &Vec3::mul(&Vec3::add(&pixel_delta_u, &pixel_delta_v), 0.5),
-    );
-
-    for (j, row) in buff_data.iter_mut().enumerate() {
-        for (i, data) in row.iter_mut().enumerate() {
-            let pixel_center = Vec3::add(
-                &pixel00_loc,
-                &Vec3::add(
-                    &Vec3::mul(&pixel_delta_u, i as f64),
-                    &Vec3::mul(&pixel_delta_v, j as f64),
-                ),
-            );
-            let ray_direction = Vec3::sub(&pixel_center, &camera_center);
-            let ray = Ray {
-                origin: camera_center.clone(),
-                direction: ray_direction.clone(),
-            };
-            let color = ray_color(&ray, &world);
-            data.x = color.x;
-            data.y = color.y;
-            data.z = color.z;
-        }
-    }
-
-    // print_image(&mut buff_data);
+    let camera = Camera::new(ASPECT_RATIO, IMAGE_WIDTH);
+    camera.render(&world, &mut buff_data);
 
     canvas.set_draw_color(Color::RGB(0, 0, 0));
     canvas.clear();
