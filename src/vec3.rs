@@ -1,3 +1,8 @@
+use rand::{
+    distributions::{Distribution, Uniform},
+    Rng,
+};
+
 #[derive(Clone, Debug)]
 pub struct Vec3 {
     pub x: f64,
@@ -16,6 +21,43 @@ impl Default for Vec3 {
 impl Vec3 {
     pub fn new(x: f64, y: f64, z: f64) -> Vec3 {
         Vec3 { x, y, z }
+    }
+    pub fn new_rand() -> Self {
+        let mut rng = rand::thread_rng();
+        Vec3 {
+            x: rng.gen(),
+            y: rng.gen(),
+            z: rng.gen(),
+        }
+    }
+    pub fn new_rand_ranged(min: f64, max: f64) -> Self {
+        let mut rng = rand::thread_rng();
+        let die = Uniform::from(min..max);
+
+        Vec3 {
+            x: die.sample(&mut rng),
+            y: die.sample(&mut rng),
+            z: die.sample(&mut rng),
+        }
+    }
+
+    pub fn new_rand_unit() -> Vec3{
+        loop {
+            let tmp = Self::new_rand_ranged(-1.0, 1.0);
+            let lensq = tmp.length_squared();
+            if 1e-160 < lensq && lensq <= 1.0 {
+                return Vec3::div(&tmp, lensq.sqrt());
+            }
+        }
+    }
+
+    pub fn rand_on_hemisphere(normal: &Vec3) -> Vec3 {
+        let r = Self::new_rand_unit();
+        if Self::dot(&r, normal) > 0.0 {
+            r
+        }else{
+            Self::mul(&r, -1.0)
+        }
     }
 
     pub fn length_squared(&self) -> f64 {

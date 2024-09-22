@@ -12,6 +12,7 @@ pub struct Camera {
     pub pixel_delta_u: Vec3,
     pub pixel_delta_v: Vec3,
     samples_per_pixel: usize,
+    max_depth: usize,
 }
 
 impl Camera {
@@ -48,24 +49,31 @@ impl Camera {
             pixel_delta_u,
             pixel_delta_v,
             samples_per_pixel: 10,
+            max_depth: 10,
         }
+    }
+    fn linear_to_gamma(linear: f64) -> f64{
+        if linear > 0.0{
+            return linear.sqrt();
+        }
+        return 0.0;
     }
 
     pub fn render(&self, world: &HittableList, buffer: &mut [Vec<Vec3>]) {
         for (j, row) in buffer.iter_mut().enumerate() {
             for (i, data) in row.iter_mut().enumerate() {
-                data.x = 0.0;
-                data.y = 0.0;
-                data.z = 0.0;
+                let mut tmp_color = Vec3::default();
                 for _ in 0..self.samples_per_pixel {
                     let ray = self.get_ray(i, j);
 
-                    let color = self.ray_color(&ray, world);
-                    let color = Vec3::mul(&color, 1.0 / self.samples_per_pixel as f64);
-                    data.x += color.x;
-                    data.y += color.y;
-                    data.z += color.z;
+                    let color = self.ray_color(&ray, self.max_depth, world);
+                    tmp_color = Vec3::add(&tmp_color, &color);
                 }
+                tmp_color = Vec3::div(&tmp_color, self.samples_per_pixel as f64);
+                data.x = Self::linear_to_gamma(tmp_color.x);
+                data.y = Self::linear_to_gamma(tmp_color.y);
+                data.z = Self::linear_to_gamma(tmp_color.z);
+
             }
         }
     }
@@ -95,15 +103,20 @@ impl Camera {
         }
     }
 
-    pub fn ray_color(&self, ray: &Ray, world: &HittableList) -> Vec3 {
+    pub fn ray_color(&self, ray: &Ray, depth: usize, world: &HittableList) -> Vec3 {
+        if depth <= 0 {
+            return Vec3::default();
+        }
         let mut hit_record = HitRecord::new();
         if world.hit(
             ray,
-            &Interval::new_with_values(0.0, f64::INFINITY),
+            &Interval::new_with_values(0.0001, f64::INFINITY),
             &mut hit_record,
         ) {
+            let direction = Vec3::add(&hit_record.normal , &Vec3::new_rand_unit());
+            let new_ray = Ray::new(&Vec3::add(&hit_record.point , &Vec3::mul(&hit_record.normal , 0.0001)), &direction);
             return Vec3::mul(
-                &Vec3::add(&hit_record.normal, &Vec3::new(1.0, 1.0, 1.0)),
+                &self.ray_color(&new_ray, depth-1, world),
                 0.5,
             );
         }
