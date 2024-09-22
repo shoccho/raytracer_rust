@@ -3,12 +3,14 @@ extern crate sdl2;
 
 mod hit_record;
 mod hittable_list;
+mod interval;
 mod ray;
 mod sphere;
 mod vec3;
 
 use hit_record::HitRecord;
 use hittable_list::HittableList;
+use interval::Interval;
 use ray::Ray;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
@@ -17,6 +19,7 @@ use sdl2::rect::Point;
 use sphere::Sphere;
 use vec3::Vec3;
 
+use core::f64;
 use std::time::Duration;
 
 const ASPECT_RATIO: f64 = 16.0 / 9.0;
@@ -56,7 +59,11 @@ fn hit_sphere(center: &Vec3, radius: f64, ray: &Ray) -> f64 {
 
 fn ray_color(ray: &Ray, world: &HittableList) -> Vec3 {
     let mut hit_record = HitRecord::new();
-    if world.hit(ray, 0.0, f64::INFINITY, &mut hit_record) {
+    if world.hit(
+        ray,
+        &Interval::new_with_values(0.0, f64::INFINITY),
+        &mut hit_record,
+    ) {
         return Vec3::mul(
             &Vec3::add(&hit_record.normal, &Vec3::new(1.0, 1.0, 1.0)),
             0.5,

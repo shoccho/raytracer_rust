@@ -1,4 +1,7 @@
-use crate::hit_record::{HitRecord, Hittable};
+use crate::{
+    hit_record::{HitRecord, Hittable},
+    interval::Interval,
+};
 
 pub struct HittableList {
     pub objects: Vec<Box<dyn Hittable>>,
@@ -19,15 +22,18 @@ impl HittableList {
     pub fn hit(
         &self,
         ray: &crate::ray::Ray,
-        ray_t_min: f64,
-        ray_t_max: f64,
+        interval: &Interval,
         hit_record: &mut HitRecord,
     ) -> bool {
         let mut tmp_record = HitRecord::new();
         let mut hit_anything = false;
-        let mut closest = ray_t_max;
+        let mut closest = interval.max;
         for obj in self.objects.iter() {
-            if obj.hit(ray, ray_t_min, closest, &mut tmp_record) {
+            if obj.hit(
+                ray,
+                &Interval::new_with_values(interval.min, closest),
+                &mut tmp_record,
+            ) {
                 hit_anything = true;
                 closest = tmp_record.t;
                 hit_record.front_face = tmp_record.front_face;
