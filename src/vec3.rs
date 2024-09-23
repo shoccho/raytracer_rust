@@ -32,12 +32,10 @@ impl Vec3 {
     }
     pub fn new_rand_ranged(min: f64, max: f64) -> Self {
         let mut rng = rand::thread_rng();
-        let die = Uniform::from(min..max);
-
         Vec3 {
-            x: die.sample(&mut rng),
-            y: die.sample(&mut rng),
-            z: die.sample(&mut rng),
+            x: min + (max - min) * rng.gen::<f64>(),
+            y: min + (max - min) * rng.gen::<f64>(),
+            z: min + (max - min) * rng.gen::<f64>(),
         }
     }
 
@@ -117,5 +115,10 @@ impl Vec3 {
 
     pub fn unit(lhs: &Vec3) -> Vec3 {
         Self::div(lhs, lhs.length())
+    }
+    pub fn near_zero(&self) -> bool {
+        const EPS: f64 = 1.0e-8;
+        
+        self.x.abs() < EPS && self.y.abs() < EPS && self.z.abs() < EPS
     }
 }

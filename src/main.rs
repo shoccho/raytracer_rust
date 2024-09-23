@@ -8,10 +8,12 @@ mod interval;
 mod ray;
 mod sphere;
 mod vec3;
+mod material;
 
 use camera::Camera;
 use hittable_list::HittableList;
 use interval::Interval;
+use material::Lambertian;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
@@ -20,6 +22,7 @@ use sphere::Sphere;
 use vec3::Vec3;
 
 use core::f64;
+use std::rc::Rc;
 use std::time::Duration;
 
 const ASPECT_RATIO: f64 = 2.0;
@@ -46,9 +49,10 @@ fn print_image(buff_data: &[Vec<Vec3>]) {
 
 fn main() {
     let mut world = HittableList::new();
+    
 
-    world.add(Box::new(Sphere::new(&Vec3::new(0.0, 0.0, -1.0), 0.5)));
-    world.add(Box::new(Sphere::new(&Vec3::new(0.0, -101.0, -1.0), 100.0)));
+    world.add(Box::new(Sphere::new(&Vec3::new(0.0, 0.0, -1.0), 0.5, Rc::new(Lambertian::new(Vec3::new(1.0, 0.0, 0.0))))));
+    world.add(Box::new(Sphere::new(&Vec3::new(0.0, -101.0, -1.0), 100.0,Rc::new(Lambertian::new(Vec3::new(0.0, 0.0, 0.0))))));
     let mut buff_data = vec![vec![Vec3::default(); IMAGE_WIDTH]; IMAGE_HEIGHT];
 
     let camera = Camera::new(ASPECT_RATIO, IMAGE_WIDTH);

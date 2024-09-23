@@ -49,7 +49,7 @@ impl Camera {
             pixel_delta_u,
             pixel_delta_v,
             samples_per_pixel: 10,
-            max_depth: 10,
+            max_depth: 50,
         }
     }
     fn linear_to_gamma(linear: f64) -> f64{
@@ -72,8 +72,7 @@ impl Camera {
                 tmp_color = Vec3::div(&tmp_color, self.samples_per_pixel as f64);
                 data.x = Self::linear_to_gamma(tmp_color.x);
                 data.y = Self::linear_to_gamma(tmp_color.y);
-                data.z = Self::linear_to_gamma(tmp_color.z);
-
+                data.z = Self::linear_to_gamma(tmp_color.z);              
             }
         }
     }
@@ -97,8 +96,8 @@ impl Camera {
     pub fn sample_square(&self) -> Vec3 {
         let mut rng = rand::thread_rng();
         Vec3 {
-            x: rng.gen::<f64>() - 0.5,
-            y: rng.gen::<f64>() - 0.5,
+            x: rng.gen::<f64>(),
+            y: rng.gen::<f64>(),
             z: 0.0,
         }
     }

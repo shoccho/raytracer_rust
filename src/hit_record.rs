@@ -1,10 +1,14 @@
-use crate::{interval::Interval, ray::Ray, Vec3};
+use std::rc::Rc;
 
+use crate::{interval::Interval, material::Material, ray::Ray, Vec3};
+
+#[derive(Clone)]
 pub struct HitRecord {
     pub point: Vec3,
     pub normal: Vec3,
     pub t: f64,
     pub front_face: bool,
+    pub material: Option<Rc<dyn Material>>,
 }
 impl HitRecord {
     pub fn new() -> Self {
@@ -12,7 +16,8 @@ impl HitRecord {
             point: Vec3::default(),
             normal: Vec3::default(),
             t: 0.0,
-            front_face: true,
+            front_face: false,
+            material: None,
         }
     }
     pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: &Vec3) {

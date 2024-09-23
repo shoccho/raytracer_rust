@@ -28,7 +28,7 @@ impl HittableList {
         let mut tmp_record = HitRecord::new();
         let mut hit_anything = false;
         let mut closest = interval.max;
-        for obj in self.objects.iter() {
+        for obj in &self.objects {
             if obj.hit(
                 ray,
                 &Interval::new_with_values(interval.min, closest),
@@ -36,10 +36,7 @@ impl HittableList {
             ) {
                 hit_anything = true;
                 closest = tmp_record.t;
-                hit_record.front_face = tmp_record.front_face;
-                hit_record.normal = tmp_record.normal.clone();
-                hit_record.point = tmp_record.point.clone();
-                hit_record.t = tmp_record.t;
+               *hit_record = tmp_record.clone();
             }
         }
         hit_anything
