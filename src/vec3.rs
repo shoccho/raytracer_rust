@@ -3,7 +3,7 @@ use rand::{
     Rng,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone , Copy,  Debug)]
 pub struct Vec3 {
     pub x: f64,
     pub y: f64,
@@ -120,5 +120,9 @@ impl Vec3 {
         const EPS: f64 = 1.0e-8;
         
         self.x.abs() < EPS && self.y.abs() < EPS && self.z.abs() < EPS
+    }
+
+    pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3{
+        Vec3::sub(v, &Vec3::mul(&Vec3::mul( n, Vec3::dot(v, n)) ,2.0))
     }
 }
