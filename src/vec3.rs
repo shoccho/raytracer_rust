@@ -125,4 +125,25 @@ impl Vec3 {
     pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3{
         Vec3::sub(v, &Vec3::mul(&Vec3::mul( n, Vec3::dot(v, n)) ,2.0))
     }
+
+    pub fn refract(uv : &Vec3, n: &Vec3, etai_over_etat: f64 ) -> Vec3 {
+        let cos_theta = Vec3::dot(&Vec3::mul(uv, -1.0), n).min(1.0);
+        let r_out = Vec3::mul(&Vec3::add(uv, &Vec3::mul(n, cos_theta)), etai_over_etat);
+        let r_out_parallel = Vec3::mul(&Vec3::mul(n,( 1.0 - r_out.length_squared()).abs().sqrt()),-1.0);
+        Vec3::add(&r_out, &r_out_parallel)
+    }
+    pub fn random_in_unit_disk()-> Vec3 {
+        
+        let mut rng = rand::thread_rng();
+        loop {
+            let p = Vec3 {
+                x: -1. + (1. - -1.) * rng.gen::<f64>(),
+                y: -1. + (1. - -1.) * rng.gen::<f64>(),
+                z: 0.,
+            };
+            if p.length_squared() < 1. {
+                return p;
+            }
+        }
+    }
 }
