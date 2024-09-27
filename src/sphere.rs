@@ -1,7 +1,10 @@
 use std::rc::Rc;
 
 use crate::{
-    hit_record::{HitRecord, Hittable}, interval::Interval, material::{Lambertian, Material}, vec3::Vec3
+    hit_record::{HitRecord, Hittable},
+    interval::Interval,
+    material::Material,
+    vec3::Vec3,
 };
 
 pub struct Sphere {
@@ -23,7 +26,7 @@ impl Hittable for Sphere {
     fn hit(&self, ray: &crate::ray::Ray, interval: &Interval, hit_record: &mut HitRecord) -> bool {
         let oc = Vec3::sub(&ray.origin, &self.center);
         let a = ray.direction.length_squared();
-        let h = Vec3::dot( &oc, &ray.direction);
+        let h = Vec3::dot(&oc, &ray.direction);
         let c = oc.length_squared() - (self.radius * self.radius);
         let d = (h * h) - (a * c);
         if d < 0.0 {

@@ -38,8 +38,8 @@ impl Camera {
 
         let theta = fov * PI / 180.;
         let h = (theta / 2.).tan();
-        
-        let center = lookfrom;
+
+        let center = lookfrom.clone();
 
         let viewport_height = 2.0 * h * focus_dist;
 
@@ -90,7 +90,7 @@ impl Camera {
         if linear > 0.0 {
             return linear.sqrt();
         }
-        return 0.0;
+        0.0
     }
 
     pub fn render(&self, world: &HittableList, buffer: &mut [Vec<Vec3>]) {
@@ -100,7 +100,7 @@ impl Camera {
                 for _ in 0..self.samples_per_pixel {
                     let ray = self.get_ray(i, j);
 
-                    let color = self.ray_color(&ray, self.max_depth, world);
+                    let color = Self::ray_color(&ray, self.max_depth, world);
                     tmp_color = Vec3::add(&tmp_color, &color);
                 }
                 tmp_color = Vec3::div(&tmp_color, self.samples_per_pixel as f64);
@@ -122,7 +122,7 @@ impl Camera {
             ),
         );
         let ray_origin = if self.defocus_angle <= 0. {
-            self.center
+            self.center.clone()
         } else {
             self.defocus_disk_sample()
         };
@@ -151,8 +151,8 @@ impl Camera {
         }
     }
 
-    pub fn ray_color(&self, ray: &Ray, depth: usize, world: &HittableList) -> Vec3 {
-        if depth <= 0 {
+    pub fn ray_color( ray: &Ray, depth: usize, world: &HittableList) -> Vec3 {
+        if depth == 0 {
             return Vec3::default();
         }
         let mut hit_record = HitRecord::new();
@@ -166,10 +166,10 @@ impl Camera {
             let material = hit_record.material.clone();
 
             if let Some(mat) = material {
-                if mat.scatter(ray, &mut hit_record, &mut attenuation, &mut scattered) {
+                if mat.scatter(ray, & hit_record, &mut attenuation, &mut scattered) {
                     return Vec3::mul_vec(
                         &attenuation,
-                        &self.ray_color(&scattered, depth - 1, world),
+                        &Self::ray_color(&scattered, depth - 1, world),
                     );
                 }
                 return Vec3::default();

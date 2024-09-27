@@ -4,8 +4,11 @@ pub struct Ray {
     pub direction: Vec3,
 }
 impl Ray {
-    pub fn new(origin: &Vec3, direction: &Vec3) -> Ray{
-        Ray { direction: direction.clone(), origin: origin.clone()}
+    pub fn new(origin: &Vec3, direction: &Vec3) -> Ray {
+        Ray {
+            direction: direction.clone(),
+            origin: origin.clone(),
+        }
     }
     pub fn at(&self, t: f64) -> Vec3 {
         Vec3::add(&self.origin, &Vec3::mul(&self.direction, t))

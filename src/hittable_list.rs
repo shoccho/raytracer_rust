@@ -36,7 +36,7 @@ impl HittableList {
             ) {
                 hit_anything = true;
                 closest = tmp_record.t;
-               *hit_record = tmp_record.clone();
+                *hit_record = tmp_record.clone();
             }
         }
         hit_anything
