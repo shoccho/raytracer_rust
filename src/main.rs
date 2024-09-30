@@ -21,6 +21,9 @@ use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::rect::Point;
 use sphere::Sphere;
+use std::error::Error;
+use std::fs::OpenOptions;
+use std::io::Write;
 use std::rc::Rc;
 use std::time::Duration;
 use vec3::Vec3;
@@ -29,25 +32,35 @@ const ASPECT_RATIO: f64 = 16. / 9.;
 const IMAGE_WIDTH: usize = 900;
 const IMAGE_HEIGHT: usize = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as usize;
 
-fn print_head() {
-    println!("P3");
-    println!("{IMAGE_WIDTH} {IMAGE_HEIGHT}");
-    println!("255")
-}
+fn print_image(buff_data: &[Vec<Vec3>]) -> Result<(), Box<dyn Error>> {
+    let mut file = OpenOptions::new().write(true).open("out.ppm")?;
+    // let mut  file = File::open("out.ppm")?;
 
-fn print_image(buff_data: &[Vec<Vec3>]) {
+    file.write(b"P3\n")?;
+    file.write(
+        format!("{} {}\n", IMAGE_WIDTH, IMAGE_HEIGHT)
+            .to_string()
+            .as_bytes(),
+    )?;
+    file.write(b"255\n")?;
+
     for (j, row) in buff_data.iter().enumerate() {
         eprintln!("Lines remaining {}", IMAGE_HEIGHT - j);
         for data in row.iter() {
             let ir = (255.999 * data.x) as isize;
             let ig = (255.999 * data.y) as isize;
             let ib = (255.999 * data.z) as isize;
-            println!("{ir} {ig} {ib}");
+            file.write(format!("{} {} {}\n", ir, ig, ib).as_bytes())?;
         }
     }
+    Ok(())
 }
 
 fn main() {
+    let output = std::env::args()
+        .nth(1)
+        .expect("no output given\n use 'sdl' or 'ppm'");
+
     let mut world = HittableList::new();
 
     let ground_material = Rc::new(Lambertian::new(Vec3::new(0.5, 0.5, 0.5)));
@@ -58,8 +71,8 @@ fn main() {
     )));
 
     let mut rng = rand::thread_rng();
-    for a in -11..11 {
-        for b in -11..11 {
+    for a in -10..10 {
+        for b in -10..10 {
             let mat = rng.gen::<f64>();
             let center = Vec3::new(
                 a as f64 + 0.9 * rng.gen::<f64>(),
@@ -115,8 +128,10 @@ fn main() {
     );
     camera.render(&world, &mut buff_data);
 
-    // print_head();
-    // print_image(&buff_data);
+    if output == "ppm" {
+        print_image(&buff_data).unwrap();
+        return;
+    }
 
     let intensity = Interval::new_with_values(0.0000, 0.9999);
 

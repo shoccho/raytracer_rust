@@ -151,7 +151,7 @@ impl Camera {
         }
     }
 
-    pub fn ray_color( ray: &Ray, depth: usize, world: &HittableList) -> Vec3 {
+    pub fn ray_color(ray: &Ray, depth: usize, world: &HittableList) -> Vec3 {
         if depth == 0 {
             return Vec3::default();
         }
@@ -166,7 +166,7 @@ impl Camera {
             let material = hit_record.material.clone();
 
             if let Some(mat) = material {
-                if mat.scatter(ray, & hit_record, &mut attenuation, &mut scattered) {
+                if mat.scatter(ray, &hit_record, &mut attenuation, &mut scattered) {
                     return Vec3::mul_vec(
                         &attenuation,
                         &Self::ray_color(&scattered, depth - 1, world),
