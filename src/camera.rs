@@ -1,9 +1,13 @@
-use std::f64::consts::PI;
-
 use crate::{
-    hit_record::HitRecord, hittable_list::HittableList, interval::Interval, ray::Ray, vec3::Vec3,
+    hit_record::{HitRecord, Hittable},
+    hittable_list::HittableList,
+    interval::Interval,
+    ray::Ray,
+    vec3::Vec3,
 };
 use rand::Rng;
+use rayon::prelude::*;
+use std::{f64::consts::PI, sync::Arc};
 
 pub struct Camera {
     pub aspect_ratio: f64,
@@ -39,7 +43,7 @@ impl Camera {
         let theta = fov * PI / 180.;
         let h = (theta / 2.).tan();
 
-        let center = lookfrom.clone();
+        let center = lookfrom;
 
         let viewport_height = 2.0 * h * focus_dist;
 
@@ -93,22 +97,76 @@ impl Camera {
         0.0
     }
 
-    pub fn render(&self, world: &HittableList, buffer: &mut [Vec<Vec3>]) {
-        for (j, row) in buffer.iter_mut().enumerate() {
-            for (i, data) in row.iter_mut().enumerate() {
-                let mut tmp_color = Vec3::default();
-                for _ in 0..self.samples_per_pixel {
-                    let ray = self.get_ray(i, j);
+    pub fn process_ray(&self, i: usize, j: usize, world: &HittableList) -> Vec3 {
+        let mut tmp_color = Vec3::default();
+        for _ in 0..self.samples_per_pixel {
+            let ray = self.get_ray(i, j);
 
-                    let color = Self::ray_color(&ray, self.max_depth, world);
-                    tmp_color = Vec3::add(&tmp_color, &color);
+            let color = Self::ray_color(&ray, self.max_depth, world);
+            tmp_color = Vec3::add(&tmp_color, &color);
+        }
+        tmp_color = Vec3::div(&tmp_color, self.samples_per_pixel as f64);
+        Vec3::new(
+            Self::linear_to_gamma(tmp_color.x),
+            Self::linear_to_gamma(tmp_color.y),
+            Self::linear_to_gamma(tmp_color.z),
+        )
+    }
+
+    pub fn render(camera: Arc<Camera>, world: HittableList) -> Vec<Vec<Vec3>> {
+        // let mut thread_handles = vec![];
+
+        (0..camera.image_height)
+            .into_par_iter()
+            .map(|j| {
+                (0..camera.image_width)
+                    .into_par_iter()
+                    .map(|i| camera.process_ray(i, j, &world))
+                    .collect::<Vec<Vec3>>()
+            })
+            .collect::<Vec<Vec<Vec3>>>()
+    }
+
+    pub fn ray_color(ray: &Ray, depth: usize, world: &HittableList) -> Vec3 {
+        if depth == 0 {
+            return Vec3::default();
+        }
+
+        // Only lock the world for the part where you need to access it
+        let hit_record = {
+            let mut hit_record = HitRecord::new();
+            if world.hit(
+                ray,
+                &Interval::new_with_values(0.001, f64::INFINITY),
+                &mut hit_record,
+            ) {
+                Some(hit_record)
+            } else {
+                None
+            }
+        };
+
+        if let Some(hit_record) = hit_record {
+            let mut scattered = Ray::new(&Vec3::default(), &Vec3::default());
+            let mut attenuation = Vec3::default();
+            let material = hit_record.material;
+
+            if let Some(mat) = material {
+                if mat.scatter(ray, &hit_record, &mut attenuation, &mut scattered) {
+                    return Vec3::mul_vec(
+                        &attenuation,
+                        &Self::ray_color(&scattered, depth - 1, world),
+                    );
                 }
-                tmp_color = Vec3::div(&tmp_color, self.samples_per_pixel as f64);
-                data.x = Self::linear_to_gamma(tmp_color.x);
-                data.y = Self::linear_to_gamma(tmp_color.y);
-                data.z = Self::linear_to_gamma(tmp_color.z);
             }
         }
+
+        let unit_dir = Vec3::unit(&ray.direction);
+        let t = 0.5 * (unit_dir.y + 1.0);
+        Vec3::add(
+            &Vec3::mul(&Vec3::new(1.0, 1.0, 1.0), 1.0 - t),
+            &Vec3::mul(&Vec3::new(0.5, 0.7, 1.0), t),
+        )
     }
 
     pub fn get_ray(&self, i: usize, j: usize) -> Ray {
@@ -122,14 +180,14 @@ impl Camera {
             ),
         );
         let ray_origin = if self.defocus_angle <= 0. {
-            self.center.clone()
+            self.center
         } else {
             self.defocus_disk_sample()
         };
         let ray_direction = Vec3::sub(&pixel_center, &self.center);
         Ray {
             origin: ray_origin,
-            direction: ray_direction.clone(),
+            direction: ray_direction,
         }
     }
     pub fn defocus_disk_sample(&self) -> Vec3 {
@@ -149,39 +207,5 @@ impl Camera {
             y: rng.gen::<f64>(),
             z: 0.0,
         }
-    }
-
-    pub fn ray_color( ray: &Ray, depth: usize, world: &HittableList) -> Vec3 {
-        if depth == 0 {
-            return Vec3::default();
-        }
-        let mut hit_record = HitRecord::new();
-        if world.hit(
-            ray,
-            &Interval::new_with_values(0.001, f64::INFINITY),
-            &mut hit_record,
-        ) {
-            let mut scattered = Ray::new(&Vec3::default(), &Vec3::default());
-            let mut attenuation = Vec3::default();
-            let material = hit_record.material.clone();
-
-            if let Some(mat) = material {
-                if mat.scatter(ray, & hit_record, &mut attenuation, &mut scattered) {
-                    return Vec3::mul_vec(
-                        &attenuation,
-                        &Self::ray_color(&scattered, depth - 1, world),
-                    );
-                }
-                return Vec3::default();
-            }
-        }
-        let unit_dir = Vec3::unit(&ray.direction);
-
-        let a = 0.5 * (unit_dir.y + 1.0);
-
-        Vec3::add(
-            &Vec3::mul(&Vec3::new(1.0, 1.0, 1.0), 1.0 - a),
-            &Vec3::mul(&Vec3::new(0.5, 0.7, 1.0), a),
-        )
     }
 }

@@ -6,29 +6,24 @@ use crate::{
 pub struct HittableList {
     pub objects: Vec<Box<dyn Hittable>>,
 }
+
 impl HittableList {
     pub fn new() -> Self {
         Self {
             objects: Vec::new(),
         }
     }
-    pub fn clear(&mut self) {
-        self.objects.clear();
+    pub fn push(&mut self, obj: Box<dyn Hittable>) {
+        self.objects.push(obj);
     }
+}
 
-    pub fn add(&mut self, object: Box<dyn Hittable>) {
-        self.objects.push(object);
-    }
-    pub fn hit(
-        &self,
-        ray: &crate::ray::Ray,
-        interval: &Interval,
-        hit_record: &mut HitRecord,
-    ) -> bool {
+impl Hittable for HittableList {
+    fn hit(&self, ray: &crate::ray::Ray, interval: &Interval, hit_record: &mut HitRecord) -> bool {
         let mut tmp_record = HitRecord::new();
         let mut hit_anything = false;
         let mut closest = interval.max;
-        for obj in &self.objects {
+        for obj in self.objects.iter() {
             if obj.hit(
                 ray,
                 &Interval::new_with_values(interval.min, closest),
