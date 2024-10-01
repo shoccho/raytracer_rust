@@ -1,6 +1,6 @@
 use rand::Rng;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Copy)]
 pub struct Vec3 {
     pub x: f64,
     pub y: f64,
@@ -15,6 +15,7 @@ impl Default for Vec3 {
         }
     }
 }
+
 impl Vec3 {
     pub fn new(x: f64, y: f64, z: f64) -> Vec3 {
         Vec3 { x, y, z }
